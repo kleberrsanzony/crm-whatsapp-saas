@@ -17,12 +17,17 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status');
   const busca = searchParams.get('busca');
+  const tipo = searchParams.get('tipo');
 
   try {
-    const where: Record<string, unknown> = {};
+    const where: any = {};
 
     if (status && status !== 'todos') {
       where.status = status;
+    }
+
+    if (tipo && tipo !== 'todos') {
+      where.client = { tipo };
     }
 
     // Atendentes veem apenas suas conversas; supervisores e admins veem todas

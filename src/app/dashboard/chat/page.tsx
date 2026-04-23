@@ -20,6 +20,7 @@ export default function ChatPage() {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [texto, setTexto] = useState('');
   const [filtro, setFiltro] = useState('todos');
+  const [tipoFiltro, setTipoFiltro] = useState('todos'); // todos | individual | grupo
   const [busca, setBusca] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [mobileChat, setMobileChat] = useState(false);
@@ -27,10 +28,10 @@ export default function ChatPage() {
 
   const carregar = useCallback(async () => {
     try {
-      const r = await api.get<{ conversas: Conversa[] }>(`/conversations?status=${filtro}&busca=${busca}`);
+      const r = await api.get<{ conversas: Conversa[] }>(`/conversations?status=${filtro}&busca=${busca}&tipo=${tipoFiltro}`);
       setConversas(r.conversas);
     } catch { /* silencioso */ }
-  }, [filtro, busca]);
+  }, [filtro, busca, tipoFiltro]);
 
   useEffect(() => { carregar(); const t = setInterval(carregar, 4000); return () => clearInterval(t); }, [carregar]);
 
@@ -80,6 +81,17 @@ export default function ChatPage() {
           {['todos', 'aberto', 'aguardando', 'finalizado'].map((f) => (
             <button key={f} className={`btn btn--sm ${filtro === f ? 'btn--primary' : 'btn--ghost'}`} onClick={() => setFiltro(f)}>
               {f === 'todos' ? 'Todos' : f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+        <div className="chat__lista-filtros" style={{ marginTop: 4, borderTop: 'none', paddingBottom: 8 }}>
+          {[
+            { id: 'todos', label: 'Todos' },
+            { id: 'individual', label: '📱 Contatos' },
+            { id: 'grupo', label: '👥 Grupos' }
+          ].map((t) => (
+            <button key={t.id} className={`btn btn--sm ${tipoFiltro === t.id ? 'btn--secondary' : 'btn--ghost'}`} onClick={() => setTipoFiltro(t.id)} style={{ fontSize: '0.75rem' }}>
+              {t.label}
             </button>
           ))}
         </div>

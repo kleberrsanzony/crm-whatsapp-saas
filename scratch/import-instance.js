@@ -9,8 +9,8 @@ async function main() {
 
   console.log('--- IMPORTANDO INSTÂNCIA EXISTENTE ---');
 
-  const instanceName = 'SanzonyCrm';
-  const apiKey = 'A9748430-ABC0-46CF-82B0-FFCBF64E62DB'; // Token retornado pela API
+  const instanceName = 'SanzonyVoz';
+  const apiKey = '9800BE336E13-43E6-98BA-32C5FE9D6621'; // Token retornado pela API
 
   const instancia = await prisma.instance.upsert({
     where: { instanceName },

@@ -8,35 +8,54 @@ async function main() {
   const adapter = new PrismaPg(pool);
   const prisma = new PrismaClient({ adapter });
 
-  console.log('--- SINCRONIZANDO CHATS REAIS (COM TOKEN DA INSTÂNCIA) ---');
+  console.log('--- LIMPANDO DADOS SUJOS ---');
+  await prisma.message.deleteMany();
+  await prisma.conversation.deleteMany();
+  await prisma.lead.deleteMany();
+  await prisma.client.deleteMany();
+  console.log('Dados limpos.');
 
-  const instanceName = 'SanzonyCrm';
-  const instanceToken = 'A9748430-ABC0-46CF-82B0-FFCBF64E62DB';
+  console.log('--- SINCRONIZANDO CHATS REAIS CORRETAMENTE ---');
+
+  const instanceName = 'SanzonyVoz';
+  const instanceToken = '9800BE336E13-43E6-98BA-32C5FE9D6621';
   const evolutionUrl = 'https://api.sanzonyvoz.com.br';
 
-  // 1. Busca instância no DB
   const instancia = await prisma.instance.findUnique({ where: { instanceName } });
   
-  // 2. Busca chats na Evolution usando o token da instância
-  const response = await axios.get(`${evolutionUrl}/chat/fetchChats/${instanceName}`, {
+  const response = await axios.post(`${evolutionUrl}/chat/findChats/${instanceName}`, {}, {
     headers: { 'apikey': instanceToken }
   });
 
   const chats = response.data;
-  console.log(`Encontrados ${chats.length} chats.`);
+  console.log(`Encontrados ${chats.length} chats na API.`);
 
   let count = 0;
-  for (const chat of chats.slice(0, 50)) {
-    const jid = chat.id || chat.remoteJid;
-    if (!jid || jid.includes('@g.us')) continue;
+  
+  // Filtra contatos e grupos
+  const todosChats = chats.filter(chat => {
+    const jid = chat.remoteJid;
+    return jid && (jid.includes('@s.whatsapp.net') || jid.includes('@g.us'));
+  });
 
-    const telefone = jid.replace('@s.whatsapp.net', '');
-    const nome = chat.name || `Contato ${telefone.slice(-4)}`;
+  for (const chat of todosChats.slice(0, 150)) {
+    const jid = chat.remoteJid;
+    const isGroup = jid.includes('@g.us');
+    const telefone = jid.split('@')[0];
+    
+    let nome = chat.pushName || chat.name;
+    if (!nome) {
+        nome = isGroup ? `Grupo ${telefone.slice(-4)}` : `Contato ${telefone.slice(0, 2)}...${telefone.slice(-4)}`;
+    }
 
     const cliente = await prisma.client.upsert({
-      where: { telefone },
-      update: { nome },
-      create: { nome, telefone }
+      where: { telefone: jid }, // Usar JID completo como identificador único agora é mais seguro para grupos
+      update: { nome, tipo: isGroup ? 'grupo' : 'individual' },
+      create: { 
+        nome, 
+        telefone: jid, 
+        tipo: isGroup ? 'grupo' : 'individual' 
+      }
     });
 
     const existe = await prisma.conversation.findFirst({
@@ -49,14 +68,14 @@ async function main() {
                 clientId: cliente.id, 
                 instanceId: instancia.id, 
                 status: 'aberto',
-                ultimaMensagem: new Date()
+                ultimaMensagem: new Date(chat.updatedAt || Date.now())
             }
         });
         count++;
     }
   }
 
-  console.log(`✅ Sincronizados ${count} contatos reais.`);
+  console.log(`✅ Sincronizados ${count} contatos reais perfeitamente.`);
 
   await prisma.$disconnect();
 }

@@ -83,8 +83,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ status: 'ignorado' });
       }
 
-      const telefoneRaw = msgData.key?.remoteJid?.replace('@s.whatsapp.net', '') || '';
-      const telefone = formatarTelefone(telefoneRaw);
+      const remoteJid = msgData.key?.remoteJid || '';
+      const isGroup = remoteJid.includes('@g.us');
+      const participantJid = msgData.key?.participant || remoteJid;
+      
+      const telefone = remoteJid; // Usar o JID completo no banco para evitar conflitos
       const instanceName = evento.instance;
       const textoRecebido =
         msgData.message?.conversation ||
@@ -98,15 +101,27 @@ export async function POST(request: NextRequest) {
       if (msgData.message?.imageMessage) tipoMensagem = 'imagem';
       if (msgData.message?.audioMessage) tipoMensagem = 'audio';
       if (msgData.message?.documentMessage) tipoMensagem = 'arquivo';
+      if (msgData.message?.videoMessage) tipoMensagem = 'video';
+      if (msgData.message?.stickerMessage) tipoMensagem = 'sticker';
 
-      // 1. Cadastro automático do cliente
+      // 1. Cadastro automático do cliente/grupo
       let cliente = await prisma.client.findUnique({ where: { telefone } });
       if (!cliente) {
-        const nomeContato = msgData.pushName || `Cliente ${telefone.slice(-4)}`;
+        let nomeContato = msgData.pushName || (isGroup ? 'Grupo Novo' : `Cliente ${telefone.slice(-4)}`);
+        
+        // Se for grupo e não tiver nome, tenta buscar o nome se disponível no evento
+        if (isGroup && !msgData.pushName) {
+           nomeContato = `Grupo ${remoteJid.split('@')[0].slice(-4)}`;
+        }
+
         cliente = await prisma.client.create({
-          data: { nome: nomeContato, telefone },
+          data: { 
+            nome: nomeContato, 
+            telefone,
+            tipo: isGroup ? 'grupo' : 'individual'
+          },
         });
-        Logger.info('Webhook', `Novo cliente cadastrado: ${telefone}`, {
+        Logger.info('Webhook', `Novo ${isGroup ? 'grupo' : 'cliente'} cadastrado: ${telefone}`, {
           data: { clienteId: cliente.id },
         });
       }
