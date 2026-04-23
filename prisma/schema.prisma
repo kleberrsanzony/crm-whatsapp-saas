@@ -1,0 +1,156 @@
+// Modelo de dados — CRM WhatsApp SaaS
+// Provider: SQLite (dev) | PostgreSQL (prod)
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Usuário do sistema (atendente, supervisor ou admin)
+model User {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
+  senhaHash String   @map("senha_hash")
+  role      String   @default("atendente") // admin | supervisor | atendente
+  ativo     Boolean  @default(true)
+  avatar    String?
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  conversas     Conversation[] @relation("AtendenteConversas")
+  leads         Lead[]         @relation("AtendenteLead")
+  notasInternas InternalNote[]
+  respostasRapidas QuickReply[]
+
+  @@map("users")
+}
+
+/// Instância de conexão WhatsApp (sessão na Evolution API)
+model Instance {
+  id           String   @id @default(uuid())
+  nome         String
+  instanceName String   @unique @map("instance_name")
+  apiKey       String   @map("api_key")
+  status       String   @default("desconectado") // conectado | desconectado
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  conversas Conversation[]
+
+  @@map("instances")
+}
+
+/// Cliente/Contato que envia ou recebe mensagens
+model Client {
+  id          String   @id @default(uuid())
+  nome        String
+  telefone    String   @unique
+  email       String?
+  observacoes String?
+  tags        String   @default("[]") // JSON array de tags
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  conversas     Conversation[]
+  leads         Lead[]
+  notasInternas InternalNote[]
+
+  @@map("clients")
+}
+
+/// Conversa entre um cliente e um atendente
+model Conversation {
+  id              String   @id @default(uuid())
+  clientId        String   @map("client_id")
+  atendenteId     String?  @map("atendente_id")
+  instanceId      String?  @map("instance_id")
+  status          String   @default("aberto") // aberto | aguardando | finalizado
+  ultimaMensagem  DateTime @default(now()) @map("ultima_mensagem")
+  mensagensNaoLidas Int    @default(0) @map("mensagens_nao_lidas")
+  criadoEm        DateTime @default(now()) @map("criado_em")
+
+  client    Client    @relation(fields: [clientId], references: [id])
+  atendente User?     @relation("AtendenteConversas", fields: [atendenteId], references: [id])
+  instance  Instance? @relation(fields: [instanceId], references: [id])
+  mensagens Message[]
+
+  @@map("conversations")
+}
+
+/// Mensagem individual dentro de uma conversa
+model Message {
+  id               String   @id @default(uuid())
+  conversationId   String   @map("conversation_id")
+  remetenteId      String?  @map("remetente_id") // null = mensagem do cliente
+  tipo             String   @default("texto") // texto | imagem | audio | arquivo
+  conteudo         String
+  mediaUrl         String?  @map("media_url")
+  enviadoPeloSistema Boolean @default(false) @map("enviado_pelo_sistema")
+  lido             Boolean  @default(false)
+  whatsappMsgId    String?  @map("whatsapp_msg_id")
+  criadoEm         DateTime @default(now()) @map("criado_em")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@map("messages")
+}
+
+/// Lead no funil de vendas
+model Lead {
+  id          String   @id @default(uuid())
+  clientId    String   @map("client_id")
+  atendenteId String?  @map("atendente_id")
+  etapa       String   @default("novo") // novo | em_atendimento | proposta | negociacao | ganho | perdido
+  valor       Float    @default(0)
+  titulo      String   @default("")
+  observacoes String?
+  tags        String   @default("[]") // JSON array de tags
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @default(now()) @map("atualizado_em")
+
+  client    Client @relation(fields: [clientId], references: [id])
+  atendente User?  @relation("AtendenteLead", fields: [atendenteId], references: [id])
+
+  @@map("leads")
+}
+
+/// Resposta rápida (atalho de mensagem)
+model QuickReply {
+  id       String @id @default(uuid())
+  atalho   String
+  mensagem String
+  userId   String @map("user_id")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("quick_replies")
+}
+
+/// Automação de mensagens
+model Automation {
+  id           String   @id @default(uuid())
+  nome         String
+  tipo         String   // boas_vindas | palavra_chave | fora_horario | chatbot
+  configuracao String   @default("{}") // JSON config
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  @@map("automations")
+}
+
+/// Nota interna sobre um cliente (não visível ao cliente)
+model InternalNote {
+  id       String   @id @default(uuid())
+  clientId String   @map("client_id")
+  userId   String   @map("user_id")
+  conteudo String
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  client Client @relation(fields: [clientId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("internal_notes")
+}

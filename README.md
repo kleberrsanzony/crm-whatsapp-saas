@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SanzonyZap CRM
 
-## Getting Started
+CRM profissional de multiatendimento via WhatsApp, integrado com [Evolution API](https://doc.evolution-api.com).
 
-First, run the development server:
+## Stack Tecnológica
+
+| Camada | Tecnologia |
+|---|---|
+| Frontend | Next.js 16 (App Router) + React 19 |
+| Estilização | CSS Vanilla (BEM) + CSS Variables |
+| Estado | Zustand (persistência LocalStorage) |
+| Backend | Next.js API Routes |
+| ORM | Prisma 7 + SQLite (dev) |
+| Auth | JWT + bcryptjs |
+| Integração | Evolution API v2 REST |
+
+## Instalação
 
 ```bash
+# 1. Instalar dependências
+npm install
+
+# 2. Configurar variáveis de ambiente
+cp .env.example .env
+# Edite .env com suas credenciais
+
+# 3. Gerar cliente Prisma
+npx prisma generate
+
+# 4. Criar banco de dados
+npx prisma migrate dev --name init
+
+# 5. Popular dados iniciais
+npm run db:seed
+
+# 6. Iniciar servidor de desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse: `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Credenciais Padrão
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Cargo | E-mail | Senha |
+|---|---|---|
+| Admin | admin@crm.com | admin123 |
+| Atendente | atendente@crm.com | atendente123 |
+| Supervisor | supervisor@crm.com | supervisor123 |
 
-## Learn More
+## Funcionalidades
 
-To learn more about Next.js, take a look at the following resources:
+- **Painel de Atendimento**: Chat estilo WhatsApp Web com filtros e busca
+- **Funil de Vendas**: Pipeline Kanban com drag-and-drop
+- **Gestão de Clientes**: Cadastro automático, notas internas, histórico
+- **Automações**: Boas-vindas, palavras-chave, fora do horário
+- **Dashboard**: Métricas em tempo real e gráficos
+- **Multi-atendimento**: Distribuição round-robin, transferência
+- **Dark Mode**: Tema escuro/claro persistente
+- **Integração WhatsApp**: Envio/recebimento via Evolution API
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev        # Servidor de desenvolvimento
+npm run build      # Build de produção
+npm run db:seed    # Popular banco com dados de exemplo
+npm run db:studio  # Interface visual do banco (Prisma Studio)
+```
 
-## Deploy on Vercel
+## Licença
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Projeto privado — Sanzony Voz
