@@ -178,7 +178,10 @@ export async function buscarQRCode(instanceName: string) {
  * Busca todos os chats da instância
  */
 export async function buscarChats(instanceName: string) {
-  return requisicao(`/chat/fetchChats/${instanceName}`);
+  return requisicao(`/chat/findChats/${instanceName}`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
 }
 
 /**
