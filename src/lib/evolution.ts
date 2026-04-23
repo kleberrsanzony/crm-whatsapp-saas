@@ -154,15 +154,18 @@ export async function configurarWebhook(instanceName: string, webhookUrl: string
   return requisicao(`/webhook/set/${instanceName}`, {
     method: 'POST',
     body: JSON.stringify({
-      url: webhookUrl,
-      webhook_by_events: false,
-      webhook_base64: true,
-      events: [
-        'MESSAGES_UPSERT',
-        'MESSAGES_UPDATE',
-        'CONNECTION_UPDATE',
-        'QRCODE_UPDATED',
-      ],
+      webhook: {
+        enabled: true,
+        url: webhookUrl,
+        byEvents: false,
+        base64: false,
+        events: [
+          'MESSAGES_UPSERT',
+          'MESSAGES_UPDATE',
+          'CONNECTION_UPDATE',
+          'QRCODE_UPDATED',
+        ]
+      }
     }),
   });
 }
