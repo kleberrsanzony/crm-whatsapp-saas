@@ -33,7 +33,7 @@ export default function ChatPage() {
     } catch { /* silencioso */ }
   }, [filtro, busca, tipoFiltro]);
 
-  useEffect(() => { carregar(); const t = setInterval(carregar, 4000); return () => clearInterval(t); }, [carregar]);
+  useEffect(() => { carregar(); const t = setInterval(carregar, 2000); return () => clearInterval(t); }, [carregar]);
 
   const carregarMensagens = useCallback(async (convId: string) => {
     try {
@@ -46,7 +46,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (!ativa) return;
     carregarMensagens(ativa);
-    const t = setInterval(() => carregarMensagens(ativa), 3000);
+    const t = setInterval(() => carregarMensagens(ativa), 2000);
     return () => clearInterval(t);
   }, [ativa, carregarMensagens]);
 

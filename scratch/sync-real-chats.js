@@ -8,12 +8,7 @@ async function main() {
   const adapter = new PrismaPg(pool);
   const prisma = new PrismaClient({ adapter });
 
-  console.log('--- LIMPANDO DADOS SUJOS ---');
-  await prisma.message.deleteMany();
-  await prisma.conversation.deleteMany();
-  await prisma.lead.deleteMany();
-  await prisma.client.deleteMany();
-  console.log('Dados limpos.');
+  console.log('--- INICIANDO SINCRONIZAÇÃO COMPLETA (UPSERT) ---');
 
   console.log('--- SINCRONIZANDO CHATS REAIS CORRETAMENTE ---');
 
@@ -38,7 +33,7 @@ async function main() {
     return jid && (jid.includes('@s.whatsapp.net') || jid.includes('@g.us'));
   });
 
-  for (const chat of todosChats.slice(0, 150)) {
+  for (const chat of todosChats) {
     const jid = chat.remoteJid;
     const isGroup = jid.includes('@g.us');
     const telefone = jid.split('@')[0];

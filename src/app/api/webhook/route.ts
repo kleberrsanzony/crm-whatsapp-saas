@@ -79,9 +79,11 @@ export async function POST(request: NextRequest) {
     // Processa mensagens recebidas
     if (tipoEvento === 'messages.upsert') {
       const msgData = evento.data;
-      if (!msgData || msgData.key?.fromMe) {
+      if (!msgData) {
         return NextResponse.json({ status: 'ignorado' });
       }
+
+      const fromMe = msgData.key?.fromMe || false;
 
       const remoteJid = msgData.key?.remoteJid || '';
       const isGroup = remoteJid.includes('@g.us');
@@ -171,11 +173,11 @@ export async function POST(request: NextRequest) {
       await prisma.message.create({
         data: {
           conversationId: conversa.id,
-          remetenteId: null, // mensagem do cliente
+          remetenteId: fromMe ? (conversa.atendenteId || 'phone-sync') : null,
           tipo: tipoMensagem,
           conteudo: textoRecebido,
           whatsappMsgId,
-          enviadoPeloSistema: false,
+          enviadoPeloSistema: fromMe,
         },
       });
 
@@ -184,8 +186,8 @@ export async function POST(request: NextRequest) {
         where: { id: conversa.id },
         data: {
           ultimaMensagem: new Date(),
-          mensagensNaoLidas: { increment: 1 },
-          status: 'aberto',
+          mensagensNaoLidas: fromMe ? undefined : { increment: 1 },
+          status: fromMe ? undefined : 'aberto',
         },
       });
 
