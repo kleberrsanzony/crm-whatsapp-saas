@@ -168,6 +168,13 @@ export async function configurarWebhook(instanceName: string, webhookUrl: string
 }
 
 /**
+ * Busca o QR Code da instância
+ */
+export async function buscarQRCode(instanceName: string) {
+  return requisicao(`/instance/connect/${instanceName}`);
+}
+
+/**
  * Busca todos os chats da instância
  */
 export async function buscarChats(instanceName: string) {

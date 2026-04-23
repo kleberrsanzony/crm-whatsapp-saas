@@ -3,13 +3,17 @@
  * Cria admin padrão e automações de exemplo
  */
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
-import path from 'path';
 
-const dbPath = path.join(process.cwd(), 'dev.db');
-const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` });
-const prisma = new PrismaClient({ adapter });
+function criarClient() {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg(pool);
+  return new PrismaClient({ adapter });
+}
+
+const prisma = criarClient();
 
 async function main() {
   // Usuário admin padrão
@@ -94,34 +98,6 @@ async function main() {
   for (const a of atalhos) {
     await prisma.quickReply.create({
       data: { ...a, userId: admin.id },
-    });
-  }
-
-  // Clientes de demonstração
-  const clientesDemo = [
-    { nome: 'Carlos Oliveira', telefone: '5511999001234', email: 'carlos@email.com' },
-    { nome: 'Ana Rodrigues', telefone: '5511998765432', email: 'ana@email.com' },
-    { nome: 'Pedro Lima', telefone: '5521997654321' },
-    { nome: 'Juliana Costa', telefone: '5531996543210', email: 'juliana@email.com' },
-    { nome: 'Roberto Alves', telefone: '5541995432109' },
-  ];
-
-  for (const c of clientesDemo) {
-    const cliente = await prisma.client.upsert({
-      where: { telefone: c.telefone },
-      update: {},
-      create: c,
-    });
-
-    // Cria lead para cada cliente demo
-    await prisma.lead.create({
-      data: {
-        clientId: cliente.id,
-        atendenteId: admin.id,
-        titulo: `Negociação - ${cliente.nome}`,
-        etapa: ['novo', 'em_atendimento', 'proposta', 'negociacao', 'ganho'][Math.floor(Math.random() * 5)],
-        valor: Math.floor(Math.random() * 5000) + 500,
-      },
     });
   }
 
