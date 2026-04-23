@@ -64,12 +64,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Salva localmente
-    const apiData = resultado.dados as Record<string, unknown>;
+    const apiData = resultado.dados as any;
+    const instanceKey = apiData?.hash || apiData?.token || apiData?.instance?.token || process.env.EVOLUTION_API_KEY || '';
+
     const instancia = await prisma.instance.create({
       data: {
         nome,
         instanceName,
-        apiKey: (apiData?.hash as string) || process.env.EVOLUTION_API_KEY || '',
+        apiKey: instanceKey,
       },
     });
 
